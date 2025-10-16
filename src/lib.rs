@@ -103,6 +103,7 @@ pub fn xxh3_128_with_secret(input: &[u8], secret: &[u8]) -> Result<u128, JsValue
 #[wasm_bindgen]
 pub struct XxHash32 {
     h: xxhash_rust::xxh32::Xxh32,
+    s: u32,
 }
 
 #[wasm_bindgen]
@@ -112,6 +113,7 @@ impl XxHash32 {
         let seed_value = seed.unwrap_or(DEFAULT_SEED as u32);
         XxHash32 {
             h: xxhash_rust::xxh32::Xxh32::new(seed_value),
+            s: seed_value,
         }
     }
 
@@ -126,9 +128,8 @@ impl XxHash32 {
     }
 
     /// Resets the hasher with optional new seed
-    pub fn reset(&mut self, seed: Option<u32>) {
-        let seed_value = seed.unwrap_or(DEFAULT_SEED as u32);
-        self.h = xxhash_rust::xxh32::Xxh32::new(seed_value);
+    pub fn reset(&mut self) {
+        self.h.reset(self.s);
     }
 }
 
@@ -138,14 +139,17 @@ use xxhash_rust::{xxh3::Xxh3Builder, xxh64::Xxh64Builder};
 #[wasm_bindgen]
 pub struct XxHash64 {
     h: xxhash_rust::xxh64::Xxh64,
+    s: u64,
 }
 
 #[wasm_bindgen]
 impl XxHash64 {
     #[wasm_bindgen(constructor)]
     pub fn new(seed: Option<u64>) -> Self {
+        let seed_value = seed.unwrap_or(DEFAULT_SEED);
         XxHash64 {
-            h: Xxh64Builder::new(seed.unwrap_or(DEFAULT_SEED)).build(),
+            h: Xxh64Builder::new(seed_value).build(),
+            s: seed_value,
         }
     }
 
@@ -160,8 +164,8 @@ impl XxHash64 {
     }
 
     /// Resets the hasher with optional new seed
-    pub fn reset(&mut self, seed: Option<u64>) {
-        self.h = Xxh64Builder::new(seed.unwrap_or(DEFAULT_SEED)).build();
+    pub fn reset(&mut self) {
+        self.h.reset(self.s);
     }
 }
 
@@ -175,10 +179,8 @@ pub struct XxHash3 {
 impl XxHash3 {
     #[wasm_bindgen(constructor)]
     pub fn new(seed: Option<u64>, secret: Option<Vec<u8>>) -> Result<Self, JsValue> {
-        let h = Xxh3Builder::new();
-
-        h.with_seed(seed.unwrap_or(DEFAULT_SEED));
-
+        let builder = Xxh3Builder::new();
+        builder.with_seed(seed.unwrap_or(DEFAULT_SEED));
         if let Some(ref secret_bytes) = secret {
             if secret_bytes.len() != DEFAULT_SECRET_SIZE {
                 return Err(JsValue::from_str(&format!(
@@ -187,8 +189,7 @@ impl XxHash3 {
                 )));
             }
         }
-
-        Ok(XxHash3 { h: h.build() })
+        Ok(XxHash3 { h: builder.build() })
     }
 
     /// Updates the hash with new data
@@ -207,20 +208,102 @@ impl XxHash3 {
     }
 
     /// Resets the hasher with optional new seed
-    pub fn reset(&mut self, seed: Option<u64>, secret: Option<Vec<u8>>) -> Result<(), JsValue> {
-        let h = Xxh3Builder::new();
-        h.with_seed(seed.unwrap_or(DEFAULT_SEED));
-        if let Some(ref secret_bytes) = secret {
-            if secret_bytes.len() != DEFAULT_SECRET_SIZE {
-                return Err(JsValue::from_str(&format!(
-                    "Invalid secret length, default '{}'",
-                    DEFAULT_SECRET_SIZE
-                )));
-            }
-        }
-        self.h = h.build();
-        Ok(())
+    pub fn reset(&mut self) {
+        self.h.reset();
     }
+}
+
+/// Computes multiple hashes for different data chunks in batch
+#[wasm_bindgen]
+pub fn xxh32_batch(chunks: Vec<js_sys::Uint8Array>, seed: Option<u32>) -> Vec<u32> {
+    let mut hasher = XxHash32::new(seed);
+    chunks
+        .into_iter()
+        .map(|chunk| {
+            hasher.update(&chunk.to_vec());
+            let val = hasher.digest();
+            hasher.reset();
+            val
+        })
+        .collect()
+}
+
+/// Computes multiple XXHash64 hashes in batch
+#[wasm_bindgen]
+pub fn xxh64_batch(chunks: Vec<js_sys::Uint8Array>, seed: Option<u64>) -> Vec<u64> {
+    let mut hasher = XxHash64::new(seed);
+    chunks
+        .into_iter()
+        .map(|chunk| {
+            hasher.update(&chunk.to_vec());
+            let val = hasher.digest();
+            hasher.reset();
+            val
+        })
+        .collect()
+}
+
+/// Computes multiple XXH3 64-bit hashes in batch
+#[wasm_bindgen]
+pub fn xxh3_64_batch(
+    chunks: Vec<js_sys::Uint8Array>,
+    seed: Option<u64>,
+    secret: Option<Vec<u8>>,
+) -> Result<Vec<u64>, JsValue> {
+    if let Some(ref secret_bytes) = secret {
+        if secret_bytes.len() != DEFAULT_SECRET_SIZE {
+            return Err(JsValue::from_str(&format!(
+                "Invalid secret length, default '{}'",
+                DEFAULT_SECRET_SIZE
+            )));
+        }
+    }
+    let mut hasher = XxHash3::new(seed, secret).unwrap();
+
+    let bytes = chunks
+        .into_iter()
+        .map(|chunk| {
+            hasher.update(&chunk.to_vec());
+            let val = hasher.digest();
+            hasher.reset();
+            val
+        })
+        .collect::<Vec<u64>>();
+
+    Ok(bytes)
+}
+
+/// Computes multiple XXH3 128-bit hashes in batch
+#[wasm_bindgen]
+pub fn xxh3_128_hex_batch(
+    chunks: Vec<js_sys::Uint8Array>,
+    seed: Option<u64>,
+    secret: Option<Vec<u8>>,
+) -> Result<Vec<String>, JsValue> {
+    if let Some(ref secret_bytes) = secret {
+        if secret_bytes.len() != DEFAULT_SECRET_SIZE {
+            return Err(JsValue::from_str(&format!(
+                "Invalid secret length, default '{}'",
+                DEFAULT_SECRET_SIZE
+            )));
+        }
+    }
+    let mut hasher = XxHash3::new(seed, secret).unwrap();
+
+    let bytes = chunks
+        .into_iter()
+        .map(|chunk| {
+            hasher.update(&chunk.to_vec());
+
+            let val: u128 = hasher.digest128();
+
+            hasher.reset();
+
+            format!("{:016x}", val)
+        })
+        .collect::<Vec<String>>();
+
+    Ok(bytes)
 }
 
 #[cfg(test)]
