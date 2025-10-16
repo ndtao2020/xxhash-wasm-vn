@@ -1,0 +1,31 @@
+[package]
+name = "xxhash-wasm-vn"
+description = "XXHASH for WebAssembly"
+version = "1.0.0"
+edition = "2024"
+repository = "https://github.com/ndtao2020/xxhash-wasm-vn"
+authors = ["Nguyen Dinh Tao <ndtao2020@gmail.com>"]
+license = "MIT License"
+readme = "README.md"
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+lto = true
+opt-level = "z"
+codegen-units = 1
+panic = "abort"
+
+[dependencies]
+alloc_cat = "1"
+wasm-bindgen = "0.2"
+getrandom = { version = "0.2", default-features = false, features = ["js"] }
+xxhash-rust = { version = "0.8", default-features = false, features = [
+    "xxh3",
+    "const_xxh3",
+    "xxh32",
+    "const_xxh32",
+    "xxh64",
+    "const_xxh64",
+] }

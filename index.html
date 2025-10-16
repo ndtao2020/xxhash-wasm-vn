@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en-US">
+
+<head>
+    <meta charset="utf-8" />
+    <title>xxHash-wasm example</title>
+</head>
+
+<body>
+    <script type="module">
+        import init, { xxh32, xxh64, xxh3_64, xxh3_128 } from "./pkg/web/xxhash_wasm_vn.js";
+
+        const encoder = new TextEncoder();
+        const decoder = new TextDecoder();
+
+        init().then(() => {
+            const str = "xxHash-wasm example - 123"
+            const data = encoder.encode(str)
+
+            console.log("xxh32: ", xxh32(data, undefined));
+            console.log("xxh64: ", xxh64(data, undefined));
+            console.log("xxh3 (64): ", xxh3_64(data, undefined));
+            console.log("xxh3 (128): ", xxh3_128(data, undefined));
+        });
+    </script>
+</body>
+
+</html>

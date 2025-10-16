@@ -1,0 +1,61 @@
+{
+    "name": "xxhash-wasm-vn",
+    "type": "module",
+    "collaborators": [
+        "ndtao2020"
+    ],
+    "description": "XXHASH for WebAssembly",
+    "version": "1.0.0",
+    "license": "MIT License",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ndtao2020/xxhash-wasm-vn"
+    },
+    "files": [
+        "web/",
+        "deno/",
+        "nodejs/",
+        "bundler/"
+    ],
+    "types": "./web/xxhash_wasm_vn.d.ts",
+    "main": "./web/xxhash_wasm_vn.js",
+    "sideEffects": [
+        "./snippets/*"
+    ],
+    "exports": {
+        "./bundler": {
+            "types": "./bundler/xxhash_wasm_vn.d.ts",
+            "require": "./bundler/xxhash_wasm_vn.js",
+            "import": "./bundler/xxhash_wasm_vn.js"
+        },
+        "./deno": {
+            "types": "./deno/xxhash_wasm_vn.d.ts",
+            "require": "./deno/xxhash_wasm_vn.js",
+            "import": "./deno/xxhash_wasm_vn.js"
+        },
+        "./nodejs": {
+            "types": "./nodejs/xxhash_wasm_vn.d.ts",
+            "require": "./nodejs/xxhash_wasm_vn.js",
+            "import": "./nodejs/xxhash_wasm_vn.js"
+        },
+        "./web": {
+            "types": "./web/xxhash_wasm_vn.d.ts",
+            "require": "./web/xxhash_wasm_vn.js",
+            "import": "./web/xxhash_wasm_vn.js"
+        },
+        ".": {
+            "types": "./web/xxhash_wasm_vn.d.ts",
+            "require": "./web/xxhash_wasm_vn.js",
+            "import": "./web/xxhash_wasm_vn.js"
+        }
+    },
+    "keywords": [
+        "xxhash",
+        "hash",
+        "hashing",
+        "wasm",
+        "webassembly",
+        "checksum",
+        "vn"
+    ]
+}
