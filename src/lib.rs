@@ -6,10 +6,6 @@ use wasm_bindgen::prelude::*;
 const DEFAULT_SEED: u64 = 0;
 const DEFAULT_SECRET_SIZE: usize = 192;
 
-/// XXHash algorithms for WebAssembly
-#[wasm_bindgen]
-pub struct XxHash {}
-
 /// Computes XXHash32 (32-bit) hash
 ///
 /// # Arguments
@@ -275,7 +271,7 @@ pub fn xxh3_64_batch(
 
 /// Computes multiple XXH3 128-bit hashes in batch
 #[wasm_bindgen]
-pub fn xxh3_128_hex_batch(
+pub fn xxh3_128_batch(
     chunks: Vec<js_sys::Uint8Array>,
     seed: Option<u64>,
     secret: Option<Vec<u8>>,
@@ -309,6 +305,8 @@ pub fn xxh3_128_hex_batch(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use js_sys::Uint8Array;
+    use wasm_bindgen_test::wasm_bindgen_test;
 
     const DEFAULT_DATA: &[u8; 27] = b"http://github.com/ndtao2020";
     const DEFAULT_SECRET: [u8; DEFAULT_SECRET_SIZE] = [
@@ -361,5 +359,30 @@ mod tests {
     fn test_hash3_128_with_secret() {
         let hash = xxh3_128_with_secret(DEFAULT_DATA, &DEFAULT_SECRET).unwrap();
         assert_eq!(hash, 228247660873216781895902422224452457537);
+    }
+
+    // Helper function to create Uint8Array from slice
+    fn create_uint8_array(data: &[u8]) -> Uint8Array {
+        Uint8Array::from(data)
+    }
+
+    #[wasm_bindgen_test]
+    fn test_xxh32_batch_basic() {
+        let chunks = vec![
+            create_uint8_array(b"hello"),
+            create_uint8_array(b"world"),
+            create_uint8_array(b"test"),
+        ];
+
+        let results = xxh32_batch(chunks, None);
+
+        assert_eq!(results.len(), 3);
+        // Verify these are valid XXH32 hashes (non-zero)
+        assert!(results[0] != 0);
+        assert!(results[1] != 0);
+        assert!(results[2] != 0);
+        // Verify different inputs produce different hashes
+        assert_ne!(results[0], results[1]);
+        assert_ne!(results[1], results[2]);
     }
 }

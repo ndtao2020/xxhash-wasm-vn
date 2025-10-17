@@ -8,13 +8,6 @@ const { xh32, xxh64, xxh3_64, xxh3_128 } = require('xxhash-wasm-vn/nodejs');
 
 ```
 
-## Deno
-
-```js
-const { xh32, xxh64, xxh3_64, xxh3_128 } = require('xxhash-wasm-vn/deno');
-
-```
-
 ## Browser
 
 ```js
